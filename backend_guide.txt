@@ -1,0 +1,46 @@
+
+# DOC'SCRIBE BACKEND IMPLEMENTATION GUIDE (FastAPI)
+
+As an AI Systems Architect, here is how you build the backend for this React app.
+
+## 1. Project Setup
+Structure your FastAPI project like this:
+/app
+  /api
+    v1/endpoints.py
+  /core
+    config.py
+    security.py
+  /models
+    consultation.py
+  /services
+    ai_service.py
+  main.py
+
+## 2. Realistic Models
+- STT: Use OpenAI Whisper (open source) or Google Gemini Flash 2.5 Native Audio (API). Gemini is faster for MVP.
+- LLM: Gemini 3 Flash is optimal. High speed, massive context (1M+ tokens), and extremely cheap.
+
+## 3. Recommended FastAPI Endpoint Logic
+
+@router.post("/process")
+async def process_consultation(data: ConsultationCreate):
+    # 1. Store initial metadata in Postgres
+    db_consultation = await crud.create_consultation(data)
+    
+    # 2. Run Parallel Tasks for LLM (using asyncio.gather)
+    tasks = []
+    if "SOAP" in data.docs:
+        tasks.append(ai_service.generate_soap(data.transcript))
+    if "PATIENT_LETTER" in data.docs:
+        tasks.append(ai_service.generate_patient_letter(data.transcript))
+    
+    results = await asyncio.gather(*tasks)
+    
+    # 3. Update DB and return
+    return {"status": "success", "docs": results}
+
+## 4. Why this works?
+- Minimal Patient Data: We only store Name/Age. The transcript is processed and optionally purged after 24 hours for HIPAA/Compliance.
+- Prompt Separation: By using different "System Instructions", you ensure the SOAP note is clinical while the Patient Letter is warm. Same data, different perspectives.
+- Scalar: This setup handles 1 doctor or 10,000 doctors using the same logic.

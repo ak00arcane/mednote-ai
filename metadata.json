@@ -1,0 +1,7 @@
+{
+  "name": "MedNote AI - Clinical Scribe",
+  "description": "Professional AI-powered medical scribe and clinical documentation assistant.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
